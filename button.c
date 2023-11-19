@@ -37,10 +37,10 @@ struct registered_button
 
 struct input_context
 {
-    uint8_t button_count;
-    struct registered_button *registered_buttons;
+    uint8_t button_count;    
     repeating_timer_t timer;
     queue_t *event_queue;
+    struct registered_button registered_buttons[];
     // Does this need a handle to stop the timer, or a bool to let the timer function know to stop.
 };
 
@@ -48,15 +48,14 @@ static bool timer_callback(repeating_timer_t *rt);
 
 void button_registration(button_definition_t *button_definition, uint8_t button_count, uint32_t scan_interval_ms, queue_t *event_queue, input_context_t *input_context)
 {
-    struct input_context *local_context = (struct input_context*) calloc(1, sizeof(struct input_context));    
+    struct input_context *local_context = (struct input_context*) malloc(sizeof(struct input_context) + button_count * sizeof(struct registered_button));    
     // Move to -> syntax as it is now a pointer to the struct.
     local_context->button_count = button_count;
     local_context->event_queue = event_queue;
-    local_context->registered_buttons = (struct registered_button*) calloc(button_count, sizeof(struct registered_button));
 
     for (uint8_t i = 0 ; i < button_count ; i++) {
         button_definition_t current_definition = button_definition[i];
-        struct registered_button current_registered = local_context->registered_buttons[i];
+        struct registered_button *current_registered = &local_context->registered_buttons[i];
         
         gpio_init(current_definition.gpio_number);
         current_definition.pull == pull_up ? gpio_pull_up(current_definition.gpio_number) : gpio_pull_down(current_definition.gpio_number);
@@ -65,10 +64,10 @@ void button_registration(button_definition_t *button_definition, uint8_t button_
         // If pulled up false means it has been pressed to invert the status.
         current_state = current_definition.pull == pull_up ? !current_state : current_state;
 
-        current_registered.gpio_number = current_definition.gpio_number;
-        current_registered.pull = current_definition.pull;
-        current_registered.last_state = current_state;
-        current_registered.user_data = current_definition.user_data;
+        current_registered->gpio_number = current_definition.gpio_number;
+        current_registered->pull = current_definition.pull;
+        current_registered->last_state = current_state;
+        current_registered->user_data = current_definition.user_data;
     }
 
     add_repeating_timer_ms(scan_interval_ms, timer_callback, local_context, &local_context->timer);
@@ -80,17 +79,17 @@ static bool timer_callback(repeating_timer_t *rt)
     struct input_context *local_context = (struct input_context*) rt->user_data;
 
     for (uint8_t i = 0; i< local_context->button_count ; i++) {
-        struct registered_button current_registered = local_context->registered_buttons[i];
-        bool current_state = gpio_get(current_registered.gpio_number);
+        struct registered_button *current_registered = &local_context->registered_buttons[i];
+        bool current_state = gpio_get(current_registered->gpio_number);
         // If pulled up false means it has been pressed to invert the status.
-        current_state = current_registered.pull == pull_up ? !current_state : current_state;
+        current_state = current_registered->pull == pull_up ? !current_state : current_state;
 
-        if (current_state != current_registered.last_state) {
+        if (current_state != current_registered->last_state) {
             button_event_t event = {
                 current_state,
-                current_registered.user_data
+                current_registered->user_data
             };
-            current_registered.last_state = current_state;
+            current_registered->last_state = current_state;
             queue_try_add(local_context->event_queue, &event);
         }
     }
