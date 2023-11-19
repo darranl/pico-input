@@ -41,7 +41,6 @@ struct input_context
     repeating_timer_t timer;
     queue_t *event_queue;
     struct registered_button registered_buttons[];
-    // Does this need a handle to stop the timer, or a bool to let the timer function know to stop.
 };
 
 static bool timer_callback(repeating_timer_t *rt);

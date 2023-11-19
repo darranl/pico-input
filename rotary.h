@@ -14,16 +14,26 @@
  * If  not, see <https://www.gnu.org/licenses/>. 
  */
 
+#ifndef ROTARY_H
+#define ROTARY_H
 
-#ifndef EVENT_H
-#define EVENT_H
+#include <stdint.h>
+
+#include "pico/util/queue.h"
+
+#include "event.h"
+#include "input.h"
+
+typedef struct {
+    uint8_t first_gpio;
+    uint8_t second_gpio;
+    pull_t pull;
+    void *user_data;
+} rotary_definition_t;
 
 /**
- *  Definition of button events that can be fired. 
+ *  Register a rotary encoder to be scanned. 
  */
-typedef struct {
-    bool action;
-    void *user_data;
-} button_event_t;
+void rotary_registration(rotary_definition_t *rotary_definition, uint32_t scan_interval_ms, queue_t *event_queue, input_context_t *input_context);
 
 #endif

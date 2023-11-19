@@ -14,7 +14,12 @@
  * If  not, see <https://www.gnu.org/licenses/>. 
  */
 
+#ifndef BUTTON_H
+#define BUTTON_H
+
 #include <stdint.h>
+
+#include "pico/util/queue.h"
 
 #include "event.h"
 #include "input.h"
@@ -29,3 +34,5 @@ typedef struct {
  *  Register a set of buttons to be scanned. 
  */
 void button_registration(button_definition_t *button_definition, uint8_t button_count, uint32_t scan_interval_ms, queue_t *event_queue, input_context_t *input_context);
+
+#endif
